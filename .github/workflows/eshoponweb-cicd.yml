@@ -48,8 +48,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: buildandtest
-    environment:
-      name: Development
     steps:
       - name: Download application artifact
         uses: actions/download-artifact@v6
