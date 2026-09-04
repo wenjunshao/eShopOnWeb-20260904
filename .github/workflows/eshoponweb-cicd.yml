@@ -1,80 +1,62 @@
 name: Build and publish
-
-on:
-  push:
-  workflow_dispatch:
-
+on: [push, workflow_dispatch]
 permissions:
   contents: read
   id-token: write
-
 env:
   RESOURCE-GROUP: az2006-rg
   LOCATION: westus2
   TEMPLATE-FILE: infra/webapp.bicep
   SUBSCRIPTION-ID: e90f488d-02c7-4c79-a332-523afd8d1a44
   WEBAPP-NAME: az2006app31057
-
 jobs:
   buildandtest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
           dotnet-quality: "preview"
-      - name: Build with dotnet
-        run: dotnet build ./eShopOnWeb.sln --configuration Release
-      - name: Test with dotnet
-        run: dotnet test ./eShopOnWeb.sln --configuration Release
-      - name: dotnet publish
-        run: |
+      - run: dotnet build ./eShopOnWeb.sln --configuration Release
+      - run: dotnet test ./eShopOnWeb.sln --configuration Release
+      - run: |
           dotnet publish ./src/Web/Web.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
           cd ${{env.DOTNET_ROOT}}/myapp
           zip -r ../app.zip .
-      - name: Upload application artifact
-        uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v5
         with:
           name: .net-app
           path: ${{env.DOTNET_ROOT}}/app.zip
-      - name: Upload Bicep artifact
-        uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v5
         with:
           name: bicep-template
           path: ${{ env.TEMPLATE-FILE }}
-
   deploy:
     runs-on: ubuntu-latest
     needs: buildandtest
     steps:
-      - name: Download application artifact
-        uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v6
         with:
           name: .net-app
           path: .net-app
-      - name: Download Bicep artifact
-        uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v6
         with:
           name: bicep-template
           path: bicep-template
-      - name: Azure Login
-        uses: azure/login@v2
+      - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Deploy Azure WebApp infrastructure
-        uses: azure/arm-deploy@v2
+          allow-no-subscriptions: true
+      - uses: azure/arm-deploy@v2
         with:
           subscriptionId: ${{ env.SUBSCRIPTION-ID }}
           resourceGroupName: ${{ env.RESOURCE-GROUP }}
           template: bicep-template/webapp.bicep
           parameters: "webAppName=${{ env.WEBAPP-NAME }} location=${{ env.LOCATION }}"
           failOnStdErr: false
-      - name: Publish website to Azure App Service
-        uses: Azure/cli@v2
+      - uses: Azure/cli@v2
         with:
-          inlineScript: |
-            az webapp deploy --name ${{ env.WEBAPP-NAME }} --resource-group ${{ env.RESOURCE-GROUP }} --src-path .net-app/app.zip --type zip
+          inlineScript: az webapp deploy --name ${{ env.WEBAPP-NAME }} --resource-group ${{ env.RESOURCE-GROUP }} --subscription ${{ env.SUBSCRIPTION-ID }} --src-path .net-app/app.zip --type zip
