@@ -8,7 +8,7 @@ env:
   LOCATION: westus2
   TEMPLATE-FILE: infra/webapp.bicep
   SUBSCRIPTION-ID: e90f488d-02c7-4c79-a332-523afd8d1a44
-  WEBAPP-NAME: az2006app31057
+  WEBAPP-NAME: az2006-github-actions-20260904
 jobs:
   buildandtest:
     runs-on: ubuntu-latest
