@@ -5,10 +5,10 @@ permissions:
   id-token: write
 env:
   RESOURCE-GROUP: az2006-rg
-  LOCATION: westus2
+  LOCATION: eastus
   TEMPLATE-FILE: infra/webapp.bicep
-  SUBSCRIPTION-ID: e90f488d-02c7-4c79-a332-523afd8d1a44
-  WEBAPP-NAME: az2006-github-actions-20260904
+  SUBSCRIPTION-ID: 36b403cf-b8b6-4084-9c7c-26f0062388f5
+  WEBAPP-NAME: az2006-github-actions-23164
 jobs:
   buildandtest:
     runs-on: ubuntu-latest
@@ -59,3 +59,4 @@ jobs:
       - uses: Azure/cli@v2
         with:
           inlineScript: az webapp deploy --name ${{ env.WEBAPP-NAME }} --resource-group ${{ env.RESOURCE-GROUP }} --subscription ${{ env.SUBSCRIPTION-ID }} --src-path .net-app/app.zip --type zip
+
